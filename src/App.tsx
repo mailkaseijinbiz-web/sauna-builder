@@ -26,35 +26,98 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(parts));
   }, [parts]);
 
-  const handleAutoBuild = () => {
-    // Logic to procedurally generate a sauna
+  const handleAutoBuild = (width: number, depth: number) => {
     handleClear();
     const generatedParts: SaunaPart[] = [];
-    const width = Math.floor(Math.random() * 3) + 2; // 2 to 4
-    const depth = Math.floor(Math.random() * 3) + 2; // 2 to 4
+
+    // Constants
+    const WALL_WIDTH = 2; // meters (from dimensions)
+
+    // Calculate centering offset to keep everything near 0,0
+    // But for simplicity, let's build from (0,0) to positive X and negative Z, then maybe shift? 
+    // Or just standard coordinates: 
+    // X: 0 to width*2
+    // Z: 0 to -depth*2
 
     // Walls
-    // Back
+    // Back (at z = -depth * 2) - facing forward (rotation 0)?
+    // Wait, rotation 0 means local Z+?
+    // Scene boxGeometry is centered.
+    // If rot 0: Width in X, thickness in Z.
     for (let x = 0; x < width; x++) {
-      generatedParts.push({ id: uuidv4(), type: 'wall', position: [x, 1.5, -depth], rotation: [0, 0, 0] });
-    }
-    // Left
-    for (let z = 0; z < depth; z++) {
-      generatedParts.push({ id: uuidv4(), type: 'wall', position: [-1, 1.5, -z], rotation: [0, Math.PI / 2, 0] });
-    }
-    // Right
-    for (let z = 0; z < depth; z++) {
-      generatedParts.push({ id: uuidv4(), type: 'wall', position: [width, 1.5, -z], rotation: [0, Math.PI / 2, 0] });
+      const xPos = x * WALL_WIDTH + (WALL_WIDTH / 2); // 1, 3, 5...
+      const zPos = -depth * WALL_WIDTH;
+      generatedParts.push({ id: uuidv4(), type: 'wall', position: [xPos, 1.5, zPos], rotation: [0, 0, 0] });
     }
 
-    // Bench
-    generatedParts.push({ id: uuidv4(), type: 'bench', position: [0, 0.25, -depth + 1], rotation: [0, 0, 0] });
+    // Front (at z = 0)
+    // If one block is 'door', we skip that wall or replace it. 
+    // Let's replace the first block (left-most) or middle? Let's do the first one for 1x1, or random?
+    // User asked: "Door is a block of same size". So it replaces a wall.
+    const doorIndex = Math.floor(width / 2); // Center-ish
+
+    for (let x = 0; x < width; x++) {
+      const xPos = x * WALL_WIDTH + (WALL_WIDTH / 2);
+      const zPos = 0;
+      if (x === doorIndex) {
+        generatedParts.push({ id: uuidv4(), type: 'door', position: [xPos, 1.5, zPos], rotation: [0, 0, 0] });
+      } else {
+        generatedParts.push({ id: uuidv4(), type: 'wall', position: [xPos, 1.5, zPos], rotation: [0, 0, 0] });
+      }
+    }
+
+    // Left (at x = 0) - rotated 90 deg around Y. 
+    // If rotated 90, dimension X becomes depth. Wall is 2 wide.
+    // So it runs along Z.
+    for (let z = 0; z < depth; z++) {
+      const zPos = -(z * WALL_WIDTH + (WALL_WIDTH / 2)); // -1, -3...
+      const xPos = 0;
+      generatedParts.push({ id: uuidv4(), type: 'wall', position: [xPos, 1.5, zPos], rotation: [0, Math.PI / 2, 0] });
+    }
+
+    // Right (at x = width * 2)
+    for (let z = 0; z < depth; z++) {
+      const zPos = -(z * WALL_WIDTH + (WALL_WIDTH / 2));
+      const xPos = width * WALL_WIDTH;
+      generatedParts.push({ id: uuidv4(), type: 'wall', position: [xPos, 1.5, zPos], rotation: [0, Math.PI / 2, 0] });
+    }
+
+    // Bench (Back wall, full width?)
+    // Bench is 2m wide. Place as many as fit width.
+    for (let x = 0; x < width; x++) {
+      const xPos = x * WALL_WIDTH + (WALL_WIDTH / 2);
+      // z position: near back wall. Back wall is at -depth*2. Bench depth 0.6.
+      // Center of bench needs to be: -depth*2 + 0.5 (dimension/2 approx)?
+      // part Z pos: -depth*2 + 0.3 (to put it inside)
+      generatedParts.push({ id: uuidv4(), type: 'bench', position: [xPos, 0.25, -depth * WALL_WIDTH + 0.6], rotation: [0, 0, 0] });
+    }
 
     // Heater
-    generatedParts.push({ id: uuidv4(), type: 'heater', position: [width - 1, 0.4, -0.5], rotation: [0, 0, 0] }); // Near front right
+    // Place in corner opposite to door if possible, or just front corner?
+    // Door is at width/2 (front). Heater at right-back corner?
+    // Position: width*2 - 0.5, -depth*2 + 0.5 ?
+    // Let's place it in Front-Right corner if door is Center/Left.
+    // Front is Z=0. Right is X=width*2.
+    // Heater check:
+    // x: width*2 - 0.6 (heater is 1.2 wide, so 0.6 from edge)
+    // z: -0.6
+    const heaterX = width * WALL_WIDTH - 0.6;
+    const heaterZ = -0.6;
 
-    // Door
-    generatedParts.push({ id: uuidv4(), type: 'door', position: [0, 1.1, 0.5], rotation: [0, 0, 0] });
+    // Only place heater if it doesn't overlap excessively with door (if door is 1x1, it takes x 0..1? No, 0..2).
+    // If width=1, door is at X 0..2. Heater at X 1.4? Overlap risk.
+    // With width=1 (1x1 room), door takes whole front. Heater must go back?
+    if (width === 1 && depth === 1) {
+      // Tiny room. Heater in back corner?
+      // Bench is at back.
+      // Maybe Heater Front-Left? (Door is front, replacing wall).
+      // Actually if Door replaces Front Wall, there is no "corner" in front wall that is wall.
+      // But heater sits on floor.
+      // Let's put heater in back right corner.
+      generatedParts.push({ id: uuidv4(), type: 'heater', position: [width * WALL_WIDTH - 0.5, 0.4, -depth * WALL_WIDTH + 0.5], rotation: [0, 0, 0] });
+    } else {
+      generatedParts.push({ id: uuidv4(), type: 'heater', position: [heaterX, 0.4, heaterZ], rotation: [0, 0, 0] });
+    }
 
     setParts(generatedParts);
   };

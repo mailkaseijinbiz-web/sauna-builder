@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { PARTS, MATERIALS } from '../store';
 import type { PartType } from '../store';
 import {
@@ -22,7 +21,7 @@ interface UIProps {
     onSelectTool: (type: PartType) => void;
     onStopPlacing: () => void;
     onClear: () => void;
-    onAutoBuild: () => void;
+    onAutoBuild: (width: number, depth: number) => void;
     onRotate: () => void;
     onDelete: () => void;
     onMaterialChange: (val: string) => void;
@@ -39,6 +38,9 @@ export const UI: React.FC<UIProps> = ({
     onDelete,
     onMaterialChange
 }) => {
+    // Size selection state
+    const [selectedSize, setSelectedSize] = useState<string>("1x1");
+
     const getIconForPart = (type: PartType) => {
         switch (type) {
             case 'wall': return <Square size={20} />;
@@ -151,26 +153,51 @@ export const UI: React.FC<UIProps> = ({
                 )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: '5px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>
-                    <button
-                        onClick={onAutoBuild}
-                        title="Auto Build Random Sauna"
-                        style={{
-                            padding: '10px',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                            background: 'linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)',
-                            color: '#006064',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '5px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold'
-                        }}
-                    >
-                        <Wand2 size={16} /> Auto Build
-                    </button>
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                        <select
+                            value={selectedSize}
+                            onChange={(e) => setSelectedSize(e.target.value)}
+                            style={{
+                                padding: '5px',
+                                borderRadius: '4px',
+                                border: '1px solid #ccc',
+                                flex: 1,
+                                fontSize: '0.8rem'
+                            }}
+                        >
+                            <option value="1x1">1x1 (2x2m)</option>
+                            <option value="1x2">1x2 (2x4m)</option>
+                            <option value="2x1">2x1 (4x2m)</option>
+                            <option value="2x2">2x2 (4x4m)</option>
+                            <option value="3x2">3x2 (6x4m)</option>
+                            <option value="2x3">2x3 (4x6m)</option>
+                            <option value="3x3">3x3 (6x6m)</option>
+                        </select>
+                        <button
+                            onClick={() => {
+                                const [w, d] = selectedSize.split('x').map(Number);
+                                onAutoBuild(w, d);
+                            }}
+                            title="Auto Build with selected size"
+                            style={{
+                                padding: '10px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                background: 'linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)',
+                                color: '#006064',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '5px',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                flex: 1
+                            }}
+                        >
+                            <Wand2 size={16} /> Auto
+                        </button>
+                    </div>
                     <button
                         onClick={onClear}
                         title="Clear All"

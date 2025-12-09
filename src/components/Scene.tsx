@@ -43,9 +43,9 @@ const PartMesh: React.FC<{
                 metalness={part.type === 'window' ? 0.8 : 0}
             />
             {part.type === 'door' && (
-                <group position={[0.35, 0, 0.06]}>
+                <group position={[0.8, -0.5, 0.12]}>
                     <mesh>
-                        <sphereGeometry args={[0.05]} />
+                        <sphereGeometry args={[0.08]} />
                         <meshStandardMaterial color="#c0c0c0" roughness={0.2} metalness={0.8} />
                     </mesh>
                 </group>
