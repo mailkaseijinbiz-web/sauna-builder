@@ -31,93 +31,111 @@ export default function App() {
     const generatedParts: SaunaPart[] = [];
 
     // Constants
-    const WALL_WIDTH = 2; // meters (from dimensions)
+    const MODULE = 0.91; // 910mm
+    const WALL_HEIGHT = 2.2;
 
-    // Calculate centering offset to keep everything near 0,0
-    // But for simplicity, let's build from (0,0) to positive X and negative Z, then maybe shift? 
-    // Or just standard coordinates: 
-    // X: 0 to width*2
-    // Z: 0 to -depth*2
+    // We need to place walls so they don't overlap in a bad way.
+    // Strategy: 
+    // Back/Front walls span the full width.
+    // Side walls sit "inside" or "between" the Back/Front walls? 
+    // Or Back/Front sit between Side/Side?
+    // Let's do: Side walls are full depth. Front/Back fill the gap.
+    // Actually, standard construction often corners overlap.
+    // Let's stick to center-line placement for simplicity of grid, but maybe offset slightly?
+    // Re-reading user request: "壁は重ならないように" (Walls should not overlap).
+    // If we place them on a grid of 0.91, and they are 0.91 wide, they touch edges.
+    // But corners?
+    // Corner: Wall along X meets Wall along Z. They will intersect.
+    // To strictly avoid overlap, we need to shorten one of them or move them.
+    // Let's treat "width" and "depth" as INNER dimensions or OUTER dimensions?
+    // Let's assume Module grid lines.
+    // Corner solution: Place a "Post" (Pillar) at corners? Or just let them butt joint.
+    // Simple Butt Joint: Side walls run full Length. Front/Back run Width minus 2*Thickness.
+    // But we are using modular parts of fixed 0.91 width. We can't shrink them easily without scaling.
+    // If we scale, texture/UVs might look weird (but we have solid color now).
+
+    // Let's try: Place on Grid. 
+    // X poses: 0, 0.91, 1.82...
+    // Corner intersection is practically unavoidable with fixed blocks unless we have Corner Blocks.
+    // "Door and Window are modules of same size".
+    // Let's assume overlap at corners is acceptable for this prototype if visual z-fighting is minimal.
+    // Or, we shift Side walls to be "outside" the Back/Front lines?
+
+    // Let's stick to the module grid for placement centers.
+    // Width = 2 means 2 modules wide (1.82m).
 
     // Walls
-    // Back (at z = -depth * 2) - facing forward (rotation 0)?
-    // Wait, rotation 0 means local Z+?
-    // Scene boxGeometry is centered.
-    // If rot 0: Width in X, thickness in Z.
+    // Back (at z = -depth * MODULE)
     for (let x = 0; x < width; x++) {
-      const xPos = x * WALL_WIDTH + (WALL_WIDTH / 2); // 1, 3, 5...
-      const zPos = -depth * WALL_WIDTH;
-      generatedParts.push({ id: uuidv4(), type: 'wall', position: [xPos, 1.5, zPos], rotation: [0, 0, 0] });
+      const xPos = x * MODULE + (MODULE / 2);
+      const zPos = -depth * MODULE;
+      generatedParts.push({ id: uuidv4(), type: 'wall', position: [xPos, WALL_HEIGHT / 2, zPos], rotation: [0, 0, 0] });
     }
 
     // Front (at z = 0)
-    // If one block is 'door', we skip that wall or replace it. 
-    // Let's replace the first block (left-most) or middle? Let's do the first one for 1x1, or random?
-    // User asked: "Door is a block of same size". So it replaces a wall.
-    const doorIndex = Math.floor(width / 2); // Center-ish
-
+    const doorIndex = Math.floor(width / 2);
     for (let x = 0; x < width; x++) {
-      const xPos = x * WALL_WIDTH + (WALL_WIDTH / 2);
+      const xPos = x * MODULE + (MODULE / 2);
       const zPos = 0;
       if (x === doorIndex) {
-        generatedParts.push({ id: uuidv4(), type: 'door', position: [xPos, 1.5, zPos], rotation: [0, 0, 0] });
+        generatedParts.push({ id: uuidv4(), type: 'door', position: [xPos, WALL_HEIGHT / 2, zPos], rotation: [0, 0, 0] });
       } else {
-        generatedParts.push({ id: uuidv4(), type: 'wall', position: [xPos, 1.5, zPos], rotation: [0, 0, 0] });
+        generatedParts.push({ id: uuidv4(), type: 'wall', position: [xPos, WALL_HEIGHT / 2, zPos], rotation: [0, 0, 0] });
       }
     }
 
-    // Left (at x = 0) - rotated 90 deg around Y. 
-    // If rotated 90, dimension X becomes depth. Wall is 2 wide.
-    // So it runs along Z.
+    // Left (at x = 0) - rotated 90 deg. 
+    // Center of wall is at X=0, Z=...
+    // If Back wall is at Z = -depth*MODULE. 
+    // And Left wall is 0.91 long.
+    // It should start from Z=0 to Z=-depth*MODULE.
+    // If we place at X=0, it intersects the end of Front/Back walls (which extend 0.455 from their center).
+    // Center X of Left wall: 0.
+    // It extends X: -0.05 to +0.05 (thickness).
+    // Front/Back Walls at X=0.455 extend X: 0 to 0.91.
+    // So they don't touch? 
+    // Left Wall X=0. Front Wall starts at X=0. No overlap! They just touch at corner?
+    // Wait. Left Wall (rotated) Width is 0.91 along Z. Thickness 0.1 along X.
+    // It occupies X: -0.05 to 0.05.
+    // THe first Front Wall (x=0) is at Center X=0.455. Width 0.91. Occupies X: 0.0 to 0.91.
+    // So X=0 is the edge. They touch perfectly!
+    // But Z?
+    // Front wall is at Z=0. Thickness 0.1 (-0.05 to 0.05).
+    // Left wall (z=0 module) center Z = -0.455. Extends 0 to -0.91.
+    // At Z=0 (actually -0.05 to 0 since it starts there?), it touches Front Wall's back face (-0.05)?
+    // This seems like a good "Corner" if we align them right.
+
+    // Side Walls
     for (let z = 0; z < depth; z++) {
-      const zPos = -(z * WALL_WIDTH + (WALL_WIDTH / 2)); // -1, -3...
+      const zPos = -(z * MODULE + (MODULE / 2));
       const xPos = 0;
-      generatedParts.push({ id: uuidv4(), type: 'wall', position: [xPos, 1.5, zPos], rotation: [0, Math.PI / 2, 0] });
+      generatedParts.push({ id: uuidv4(), type: 'wall', position: [xPos, WALL_HEIGHT / 2, zPos], rotation: [0, Math.PI / 2, 0] });
     }
 
-    // Right (at x = width * 2)
+    // Right (at x = width * MODULE)
     for (let z = 0; z < depth; z++) {
-      const zPos = -(z * WALL_WIDTH + (WALL_WIDTH / 2));
-      const xPos = width * WALL_WIDTH;
-      generatedParts.push({ id: uuidv4(), type: 'wall', position: [xPos, 1.5, zPos], rotation: [0, Math.PI / 2, 0] });
+      const zPos = -(z * MODULE + (MODULE / 2));
+      const xPos = width * MODULE;
+      generatedParts.push({ id: uuidv4(), type: 'wall', position: [xPos, WALL_HEIGHT / 2, zPos], rotation: [0, Math.PI / 2, 0] });
     }
 
-    // Bench (Back wall, full width?)
-    // Bench is 2m wide. Place as many as fit width.
+    // Bench 
     for (let x = 0; x < width; x++) {
-      const xPos = x * WALL_WIDTH + (WALL_WIDTH / 2);
-      // z position: near back wall. Back wall is at -depth*2. Bench depth 0.6.
-      // Center of bench needs to be: -depth*2 + 0.5 (dimension/2 approx)?
-      // part Z pos: -depth*2 + 0.3 (to put it inside)
-      generatedParts.push({ id: uuidv4(), type: 'bench', position: [xPos, 0.25, -depth * WALL_WIDTH + 0.6], rotation: [0, 0, 0] });
+      const xPos = x * MODULE + (MODULE / 2);
+      // Bench dims: 0.91 width, 0.45 depth.
+      // Place against back wall (-depth*MODULE).
+      // Wall inner face is -depth*MODULE + 0.05.
+      // Bench center Z = -depth*MODULE + 0.05 + 0.225 (half depth) = + 0.275 approx
+      generatedParts.push({ id: uuidv4(), type: 'bench', position: [xPos, 0.25, -depth * MODULE + 0.3], rotation: [0, 0, 0] }); // 0.25 Y is half height?
+      // Bench height 0.45 -> Y center 0.225.
     }
 
     // Heater
-    // Place in corner opposite to door if possible, or just front corner?
-    // Door is at width/2 (front). Heater at right-back corner?
-    // Position: width*2 - 0.5, -depth*2 + 0.5 ?
-    // Let's place it in Front-Right corner if door is Center/Left.
-    // Front is Z=0. Right is X=width*2.
-    // Heater check:
-    // x: width*2 - 0.6 (heater is 1.2 wide, so 0.6 from edge)
-    // z: -0.6
-    const heaterX = width * WALL_WIDTH - 0.6;
-    const heaterZ = -0.6;
+    // Corner
+    const heaterX = width * MODULE - 0.45; // Half module from right
+    const heaterZ = -0.45; // Half module from front
 
-    // Only place heater if it doesn't overlap excessively with door (if door is 1x1, it takes x 0..1? No, 0..2).
-    // If width=1, door is at X 0..2. Heater at X 1.4? Overlap risk.
-    // With width=1 (1x1 room), door takes whole front. Heater must go back?
-    if (width === 1 && depth === 1) {
-      // Tiny room. Heater in back corner?
-      // Bench is at back.
-      // Maybe Heater Front-Left? (Door is front, replacing wall).
-      // Actually if Door replaces Front Wall, there is no "corner" in front wall that is wall.
-      // But heater sits on floor.
-      // Let's put heater in back right corner.
-      generatedParts.push({ id: uuidv4(), type: 'heater', position: [width * WALL_WIDTH - 0.5, 0.4, -depth * WALL_WIDTH + 0.5], rotation: [0, 0, 0] });
-    } else {
-      generatedParts.push({ id: uuidv4(), type: 'heater', position: [heaterX, 0.4, heaterZ], rotation: [0, 0, 0] });
-    }
+    generatedParts.push({ id: uuidv4(), type: 'heater', position: [heaterX, 0.4, heaterZ], rotation: [0, 0, 0] });
 
     setParts(generatedParts);
   };
@@ -131,11 +149,11 @@ export default function App() {
         rotation: [0, ghostRotation, 0],
       };
       // Adjust y position based on type dimensions
-      if (activeTool === 'wall') newPart.position[1] = 1.5;
-      if (activeTool === 'bench') newPart.position[1] = 0.25;
+      if (activeTool === 'wall') newPart.position[1] = 1.1; // 2.2/2
+      if (activeTool === 'bench') newPart.position[1] = 0.225; // 0.45/2
       if (activeTool === 'heater') newPart.position[1] = 0.4;
       if (activeTool === 'door') newPart.position[1] = 1.1;
-      if (activeTool === 'window') newPart.position[1] = 1.5;
+      if (activeTool === 'window') newPart.position[1] = 1.5; // Window high up? Or full height? 1.0 height. Center at 1.5 means 1.0 to 2.0. Good.
 
       setParts([...parts, newPart]);
       // Optional: Keep tool active or clear it? Let's keep it active for placing multiple.

@@ -1,9 +1,8 @@
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid, Sky, ContactShadows, Environment } from '@react-three/drei';
+import { OrbitControls, Grid, Sky, Environment } from '@react-three/drei';
 import { PARTS } from '../store';
 import type { SaunaPart, PartType } from '../store';
-import * as THREE from 'three';
 
 interface SceneProps {
     parts: SaunaPart[];
@@ -14,22 +13,39 @@ interface SceneProps {
     onPlaneClick?: (point: [number, number, number]) => void;
 }
 
-const PartMesh: React.FC<{
+interface PartMeshProps {
     part: SaunaPart;
     isSelected?: boolean;
-    onClick?: () => void
-}> = ({ part, isSelected, onClick }) => {
-    const def = PARTS.find((p) => p.type === part.type);
+    onClick: (id: string) => void;
+    onPointerMove?: (e: any) => void;
+    onPointerLeave?: (e: any) => void;
+}
+
+const PartMesh = ({ part, isSelected, onClick, onPointerMove, onPointerLeave }: PartMeshProps) => {
+    const def = PARTS.find(p => p.type === part.type);
     if (!def) return null;
+
+    // Enhanced Material Properties
+    const getMaterialProps = (type: string) => {
+        switch (type) {
+            case 'wall': return { roughness: 0.9, metalness: 0.1 }; // Matte wood
+            case 'bench': return { roughness: 0.6, metalness: 0.0 }; // Smooth wood
+            case 'heater': return { roughness: 0.4, metalness: 0.8, color: '#222' }; // Metal
+            case 'door': return { roughness: 0.2, metalness: 0.1 }; // Glass/Wood
+            case 'window': return { roughness: 0.1, metalness: 0.9, transparent: true, opacity: 0.3 };
+            default: return { roughness: 0.5 };
+        }
+    };
+
+    const matProps = getMaterialProps(part.type);
 
     return (
         <mesh
-            position={new THREE.Vector3(...part.position)}
-            rotation={new THREE.Euler(...part.rotation)}
-            onClick={(e) => {
-                e.stopPropagation();
-                onClick?.();
-            }}
+            position={[...part.position]}
+            rotation={[...part.rotation]}
+            onClick={(e) => { e.stopPropagation(); onClick(part.id); }}
+            onPointerMove={onPointerMove}
+            onPointerLeave={onPointerLeave}
             castShadow
             receiveShadow
         >
@@ -37,22 +53,16 @@ const PartMesh: React.FC<{
             <meshStandardMaterial
                 color={isSelected ? '#ff4444' : (part.materialColor || def.color)}
                 emissive={isSelected ? '#aa0000' : '#000000'}
-                roughness={part.type === 'window' ? 0.2 : 0.8}
-                transparent={part.type === 'window'}
-                opacity={part.type === 'window' ? 0.6 : 1}
-                metalness={part.type === 'window' ? 0.8 : 0}
+                {...matProps}
             />
             {part.type === 'door' && (
-                <group position={[0.8, -0.5, 0.12]}>
-                    <mesh>
-                        <sphereGeometry args={[0.08]} />
-                        <meshStandardMaterial color="#c0c0c0" roughness={0.2} metalness={0.8} />
+                <group position={[0.35, -0.2, 0.06]}>
+                    <mesh rotation={[Math.PI / 2, 0, 0]}>
+                        <cylinderGeometry args={[0.03, 0.03, 0.1]} />
+                        <meshStandardMaterial color="#888" roughness={0.3} metalness={0.9} />
                     </mesh>
                 </group>
             )}
-            {/* Placeholder for future textures:
-               If we had textures, we would load them with useTexture and apply map={texture} 
-             */}
         </mesh>
     );
 };
@@ -88,29 +98,28 @@ export const Scene: React.FC<SceneProps> = ({
     };
 
     return (
-        <Canvas shadows camera={{ position: [5, 5, 5], fov: 50 }}>
-            <color attach="background" args={['#f0f0f0']} />
-
-            {/* Environment & Lighting */}
-            <Sky sunPosition={[10, 10, 10]} turbidity={0.1} rayleigh={0.5} mieCoefficient={0.005} mieDirectionalG={0.8} />
-            <ambientLight intensity={0.4} />
-            <directionalLight
+        <Canvas shadows camera={{ position: [4, 4, 4], fov: 50 }}>
+            {/* Better Lighting Environment */}
+            <ambientLight intensity={0.5} />
+            <spotLight
                 position={[10, 10, 10]}
-                intensity={1.2}
+                angle={0.15}
+                penumbra={1}
+                intensity={1.5}
                 castShadow
-                shadow-mapSize={[1024, 1024]}
+                shadow-mapSize={[2048, 2048]}
             />
-            <Environment preset="city" />
+            <pointLight position={[-10, -10, -10]} intensity={0.5} />
+            <Environment preset="sunset" background blur={0.6} />
+            <Sky sunPosition={[100, 20, 100]} turbidity={0.5} rayleigh={0.5} />
 
             <OrbitControls makeDefault maxPolarAngle={Math.PI / 2.1} /> {/* Limit camera going under floor */}
 
             {/* Shadows */}
-            <ContactShadows position={[0, -0.01, 0]} opacity={0.6} scale={40} blur={2.5} far={4} />
-
             <Grid
                 position={[0, 0.01, 0]}
                 args={[20, 20]} // Larger grid
-                cellSize={1}
+                cellSize={0.91}
                 cellThickness={0.5}
                 cellColor="#6f6f6f"
                 sectionSize={5}

@@ -165,13 +165,13 @@ export const UI: React.FC<UIProps> = ({
                                 fontSize: '0.8rem'
                             }}
                         >
-                            <option value="1x1">1x1 (2x2m)</option>
-                            <option value="1x2">1x2 (2x4m)</option>
-                            <option value="2x1">2x1 (4x2m)</option>
-                            <option value="2x2">2x2 (4x4m)</option>
-                            <option value="3x2">3x2 (6x4m)</option>
-                            <option value="2x3">2x3 (4x6m)</option>
-                            <option value="3x3">3x3 (6x6m)</option>
+                            <option value="1x1">1x1 (0.5坪/約1x1m)</option>
+                            <option value="1x2">1x2 (1坪/約1x2m)</option>
+                            <option value="2x1">2x1 (1坪/約2x1m)</option>
+                            <option value="2x2">2x2 (2坪/約2x2m)</option>
+                            <option value="3x2">3x2 (3坪/約3x2m)</option>
+                            <option value="2x3">2x3 (3坪/約2x3m)</option>
+                            <option value="3x3">3x3 (4.5坪/約3x3m)</option>
                         </select>
                         <button
                             onClick={() => {
