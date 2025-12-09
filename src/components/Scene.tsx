@@ -43,11 +43,16 @@ const PartMesh: React.FC<{
                 metalness={part.type === 'window' ? 0.8 : 0}
             />
             {part.type === 'door' && (
-                <mesh position={[0.3, 0, 0.06]}>
-                    <sphereGeometry args={[0.05]} />
-                    <meshStandardMaterial color="#silver" />
-                </mesh>
+                <group position={[0.35, 0, 0.06]}>
+                    <mesh>
+                        <sphereGeometry args={[0.05]} />
+                        <meshStandardMaterial color="#c0c0c0" roughness={0.2} metalness={0.8} />
+                    </mesh>
+                </group>
             )}
+            {/* Placeholder for future textures:
+               If we had textures, we would load them with useTexture and apply map={texture} 
+             */}
         </mesh>
     );
 };

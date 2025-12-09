@@ -10,10 +10,10 @@ import {
     Square,
     Armchair,
     XCircle,
-    LayoutTemplate,
     DoorOpen,
     AppWindow,
-    Info
+    Info,
+    Wand2
 } from 'lucide-react';
 
 interface UIProps {
@@ -22,11 +22,10 @@ interface UIProps {
     onSelectTool: (type: PartType) => void;
     onStopPlacing: () => void;
     onClear: () => void;
-    onLoadPreset: () => void;
+    onAutoBuild: () => void;
     onRotate: () => void;
     onDelete: () => void;
     onMaterialChange: (val: string) => void;
-    totalPrice: number;
 }
 
 export const UI: React.FC<UIProps> = ({
@@ -35,11 +34,10 @@ export const UI: React.FC<UIProps> = ({
     onSelectTool,
     onStopPlacing,
     onClear,
-    onLoadPreset,
+    onAutoBuild,
     onRotate,
     onDelete,
-    onMaterialChange,
-    totalPrice
+    onMaterialChange
 }) => {
     const getIconForPart = (type: PartType) => {
         switch (type) {
@@ -154,22 +152,24 @@ export const UI: React.FC<UIProps> = ({
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: '5px', borderTop: '1px solid #ccc', paddingTop: '10px' }}>
                     <button
-                        onClick={onLoadPreset}
-                        title="Load Preset"
+                        onClick={onAutoBuild}
+                        title="Auto Build Random Sauna"
                         style={{
                             padding: '10px',
                             border: '1px solid #ccc',
                             borderRadius: '4px',
-                            background: '#f8f9fa',
+                            background: 'linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%)',
+                            color: '#006064',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '5px',
-                            fontSize: '0.8rem'
+                            fontSize: '0.8rem',
+                            fontWeight: 'bold'
                         }}
                     >
-                        <LayoutTemplate size={16} /> preset
+                        <Wand2 size={16} /> Auto Build
                     </button>
                     <button
                         onClick={onClear}
@@ -191,43 +191,29 @@ export const UI: React.FC<UIProps> = ({
                 </div>
             </div>
 
-            {/* Price Tag & Status */}
+            {/* Helper Text */}
             <div style={{
                 position: 'fixed',
-                top: '20px',
-                right: '20px',
+                bottom: '20px',
+                left: '50%',
+                transform: 'translateX(-50%)',
                 pointerEvents: 'auto',
-                background: 'rgba(255,255,255,0.95)',
-                padding: '16px',
-                borderRadius: '12px',
-                boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
-                minWidth: '200px',
-                backdropFilter: 'blur(10px)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px'
+                background: 'rgba(255,255,255,0.9)',
+                padding: '10px 20px',
+                borderRadius: '20px',
+                fontSize: '0.9rem',
+                backdropFilter: 'blur(5px)',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
             }}>
-                <div style={{ fontSize: '0.85rem', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>
-                    Total Estimate
-                </div>
-                <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#2b2b2b' }}>
-                    ¥{totalPrice.toLocaleString()}
-                </div>
-
-                <div style={{ borderTop: '1px solid #eee', marginTop: '5px', paddingTop: '10px', fontSize: '0.9rem', color: '#444' }}>
-                    <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Info size={16} color="#007bff" />
-                        {activeTool
-                            ? <span><strong>Placing {PARTS.find(p => p.type === activeTool)?.label}</strong>. 'R' rotates.</span>
-                            : selectedPartId
-                                ? <span>Item Selected</span>
-                                : "Ready to build"}
-                    </p>
-                </div>
+                <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Info size={16} color="#007bff" />
+                    {activeTool
+                        ? <span><strong>Placing {PARTS.find(p => p.type === activeTool)?.label}</strong>. Press 'R' to rotate.</span>
+                        : selectedPartId
+                            ? <span>Item Selected. 'R' rotates, 'Del' removes.</span>
+                            : "Ready to build. Select a tool or click Auto Build."}
+                </p>
             </div>
-
-            {/* Help / Instructions (Bottom Center? Let's keep it simple for now, using Status box above) */}
         </div>
     );
 };
-

@@ -17,12 +17,12 @@ export const MATERIALS = [
     { label: 'Tile Blue', value: '#87ceeb' },
 ];
 
-export const PARTS: { type: PartType; label: string; color: string; dimensions: [number, number, number]; price: number }[] = [
-    { type: 'wall', label: 'Wall', color: '#8b5a2b', dimensions: [2, 3, 0.2], price: 15000 },
-    { type: 'heater', label: 'Heater', color: '#333333', dimensions: [0.6, 0.8, 0.4], price: 80000 }, // Non-square for visible rotation
-    { type: 'bench', label: 'Bench', color: '#d2b48c', dimensions: [2, 0.5, 0.6], price: 12000 },
-    { type: 'door', label: 'Door', color: '#a0522d', dimensions: [1, 2.2, 0.1], price: 45000 },
-    { type: 'window', label: 'Window', color: '#87ceeb', dimensions: [1, 1, 0.1], price: 30000 },
+export const PARTS: { type: PartType; label: string; color: string; dimensions: [number, number, number] }[] = [
+    { type: 'wall', label: 'Wall', color: '#8b5a2b', dimensions: [2, 3, 0.2] },
+    { type: 'heater', label: 'Heater', color: '#333333', dimensions: [0.6, 0.8, 0.4] }, // Non-square for visible rotation
+    { type: 'bench', label: 'Bench', color: '#d2b48c', dimensions: [2, 0.5, 0.6] },
+    { type: 'door', label: 'Door', color: '#a0522d', dimensions: [1, 2.2, 0.1] },
+    { type: 'window', label: 'Window', color: '#87ceeb', dimensions: [1, 1, 0.1] },
 ];
 
 export const BASIC_SAUNA_PRESET: Omit<SaunaPart, 'id'>[] = [

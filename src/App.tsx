@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Scene } from './components/Scene';
 import { UI } from './components/UI';
-import { BASIC_SAUNA_PRESET, PARTS } from './store';
 import type { SaunaPart, PartType } from './store';
 import { v4 as uuidv4 } from 'uuid';
 const STORAGE_KEY = 'sauna_builder_parts_v1';
@@ -27,11 +26,38 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(parts));
   }, [parts]);
 
-  // Calculate total price
-  const totalPrice = parts.reduce((sum, part) => {
-    const def = PARTS.find(p => p.type === part.type);
-    return sum + (def?.price || 0);
-  }, 0);
+  const handleAutoBuild = () => {
+    // Logic to procedurally generate a sauna
+    handleClear();
+    const generatedParts: SaunaPart[] = [];
+    const width = Math.floor(Math.random() * 3) + 2; // 2 to 4
+    const depth = Math.floor(Math.random() * 3) + 2; // 2 to 4
+
+    // Walls
+    // Back
+    for (let x = 0; x < width; x++) {
+      generatedParts.push({ id: uuidv4(), type: 'wall', position: [x, 1.5, -depth], rotation: [0, 0, 0] });
+    }
+    // Left
+    for (let z = 0; z < depth; z++) {
+      generatedParts.push({ id: uuidv4(), type: 'wall', position: [-1, 1.5, -z], rotation: [0, Math.PI / 2, 0] });
+    }
+    // Right
+    for (let z = 0; z < depth; z++) {
+      generatedParts.push({ id: uuidv4(), type: 'wall', position: [width, 1.5, -z], rotation: [0, Math.PI / 2, 0] });
+    }
+
+    // Bench
+    generatedParts.push({ id: uuidv4(), type: 'bench', position: [0, 0.25, -depth + 1], rotation: [0, 0, 0] });
+
+    // Heater
+    generatedParts.push({ id: uuidv4(), type: 'heater', position: [width - 1, 0.4, -0.5], rotation: [0, 0, 0] }); // Near front right
+
+    // Door
+    generatedParts.push({ id: uuidv4(), type: 'door', position: [0, 1.1, 0.5], rotation: [0, 0, 0] });
+
+    setParts(generatedParts);
+  };
 
   const handlePlaneClick = (point: [number, number, number]) => {
     if (activeTool) {
@@ -61,15 +87,6 @@ export default function App() {
     setActiveTool(null);
     setSelectedPartId(null);
     setGhostRotation(0);
-  };
-
-  const handleLoadPreset = () => {
-    handleClear();
-    const newParts = BASIC_SAUNA_PRESET.map(p => ({
-      ...p,
-      id: uuidv4()
-    }));
-    setParts(newParts as SaunaPart[]);
   };
 
   const handlePartClick = (id: string) => {
@@ -151,13 +168,12 @@ export default function App() {
         onSelectTool={handleToolSelect}
         activeTool={activeTool}
         onClear={handleClear}
-        onLoadPreset={handleLoadPreset}
+        onAutoBuild={handleAutoBuild}
         selectedPartId={selectedPartId}
         onRotate={handleRotate}
         onDelete={handleDelete}
         onMaterialChange={handleMaterialChange}
         onStopPlacing={() => setActiveTool(null)}
-        totalPrice={totalPrice}
       />
     </>
   );
