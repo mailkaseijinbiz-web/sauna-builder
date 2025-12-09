@@ -37,8 +37,17 @@ const PartMesh: React.FC<{
             <meshStandardMaterial
                 color={isSelected ? '#ff4444' : (part.materialColor || def.color)}
                 emissive={isSelected ? '#aa0000' : '#000000'}
-                roughness={0.8}
+                roughness={part.type === 'window' ? 0.2 : 0.8}
+                transparent={part.type === 'window'}
+                opacity={part.type === 'window' ? 0.6 : 1}
+                metalness={part.type === 'window' ? 0.8 : 0}
             />
+            {part.type === 'door' && (
+                <mesh position={[0.3, 0, 0.06]}>
+                    <sphereGeometry args={[0.05]} />
+                    <meshStandardMaterial color="#silver" />
+                </mesh>
+            )}
         </mesh>
     );
 };

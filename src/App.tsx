@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Scene } from './components/Scene';
 import { UI } from './components/UI';
-import { BASIC_SAUNA_PRESET } from './store';
+import { BASIC_SAUNA_PRESET, PARTS } from './store';
 import type { SaunaPart, PartType } from './store';
 import { v4 as uuidv4 } from 'uuid';
+const STORAGE_KEY = 'sauna_builder_parts_v1';
 
-function App() {
-  const [parts, setParts] = useState<SaunaPart[]>([]);
+export default function App() {
+  const [parts, setParts] = useState<SaunaPart[]>(() => {
+    // Initialize from local storage if available
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  });
   const [activeTool, setActiveTool] = useState<PartType | null>(null);
   const [selectedPartId, setSelectedPartId] = useState<string | null>(null);
   const [ghostRotation, setGhostRotation] = useState<number>(0);
@@ -16,6 +21,17 @@ function App() {
     setSelectedPartId(null);
     setGhostRotation(0); // Reset rotation when picking new tool
   };
+
+  // Auto-save whenever parts change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(parts));
+  }, [parts]);
+
+  // Calculate total price
+  const totalPrice = parts.reduce((sum, part) => {
+    const def = PARTS.find(p => p.type === part.type);
+    return sum + (def?.price || 0);
+  }, 0);
 
   const handlePlaneClick = (point: [number, number, number]) => {
     if (activeTool) {
@@ -29,6 +45,8 @@ function App() {
       if (activeTool === 'wall') newPart.position[1] = 1.5;
       if (activeTool === 'bench') newPart.position[1] = 0.25;
       if (activeTool === 'heater') newPart.position[1] = 0.4;
+      if (activeTool === 'door') newPart.position[1] = 1.1;
+      if (activeTool === 'window') newPart.position[1] = 1.5;
 
       setParts([...parts, newPart]);
       // Optional: Keep tool active or clear it? Let's keep it active for placing multiple.
@@ -139,9 +157,8 @@ function App() {
         onDelete={handleDelete}
         onMaterialChange={handleMaterialChange}
         onStopPlacing={() => setActiveTool(null)}
+        totalPrice={totalPrice}
       />
     </>
   );
 }
-
-export default App;

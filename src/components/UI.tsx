@@ -10,7 +10,10 @@ import {
     Square,
     Armchair,
     XCircle,
-    LayoutTemplate
+    LayoutTemplate,
+    DoorOpen,
+    AppWindow,
+    Info
 } from 'lucide-react';
 
 interface UIProps {
@@ -23,6 +26,7 @@ interface UIProps {
     onRotate: () => void;
     onDelete: () => void;
     onMaterialChange: (val: string) => void;
+    totalPrice: number;
 }
 
 export const UI: React.FC<UIProps> = ({
@@ -34,13 +38,16 @@ export const UI: React.FC<UIProps> = ({
     onLoadPreset,
     onRotate,
     onDelete,
-    onMaterialChange
+    onMaterialChange,
+    totalPrice
 }) => {
     const getIconForPart = (type: PartType) => {
         switch (type) {
             case 'wall': return <Square size={20} />;
             case 'heater': return <Flame size={20} />;
             case 'bench': return <Armchair size={20} />;
+            case 'door': return <DoorOpen size={20} />;
+            case 'window': return <AppWindow size={20} />;
             default: return <Square size={20} />;
         }
     };
@@ -56,24 +63,26 @@ export const UI: React.FC<UIProps> = ({
             zIndex: 10,
             pointerEvents: 'none' // Allow click through to canvas unless on button
         }}>
+            {/* Sidebar Toolbar */}
             <div style={{
-                background: 'rgba(255, 255, 255, 0.9)',
-                padding: '12px',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                background: 'rgba(255, 255, 255, 0.95)',
+                padding: '16px',
+                borderRadius: '12px',
+                boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
                 pointerEvents: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '10px',
-                minWidth: '60px',
-                alignItems: 'center'
+                gap: '12px',
+                minWidth: '70px',
+                alignItems: 'center',
+                backdropFilter: 'blur(10px)'
             }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <button
                         onClick={onStopPlacing}
                         title="Select Mode"
                         style={{
-                            padding: '12px',
+                            padding: '14px',
                             border: activeTool === null && selectedPartId === null ? '2px solid #007bff' : '2px solid transparent',
                             borderRadius: '8px',
                             background: 'white',
@@ -182,16 +191,43 @@ export const UI: React.FC<UIProps> = ({
                 </div>
             </div>
 
-            <div style={{ pointerEvents: 'auto', background: 'rgba(255,255,255,0.8)', padding: '10px', borderRadius: '4px', fontSize: '0.9rem', maxWidth: '200px' }}>
-                <p style={{ margin: 0 }}>
-                    {activeTool
-                        ? <span>Click grid to place. <strong>R</strong> rotates.</span>
-                        : selectedPartId
-                            ? <span><strong>R</strong> rotates, <strong>Del</strong> removes.</span>
-                            : "Select a tool."}
-                </p>
+            {/* Price Tag & Status */}
+            <div style={{
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                pointerEvents: 'auto',
+                background: 'rgba(255,255,255,0.95)',
+                padding: '16px',
+                borderRadius: '12px',
+                boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
+                minWidth: '200px',
+                backdropFilter: 'blur(10px)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+            }}>
+                <div style={{ fontSize: '0.85rem', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>
+                    Total Estimate
+                </div>
+                <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#2b2b2b' }}>
+                    ¥{totalPrice.toLocaleString()}
+                </div>
+
+                <div style={{ borderTop: '1px solid #eee', marginTop: '5px', paddingTop: '10px', fontSize: '0.9rem', color: '#444' }}>
+                    <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Info size={16} color="#007bff" />
+                        {activeTool
+                            ? <span><strong>Placing {PARTS.find(p => p.type === activeTool)?.label}</strong>. 'R' rotates.</span>
+                            : selectedPartId
+                                ? <span>Item Selected</span>
+                                : "Ready to build"}
+                    </p>
+                </div>
             </div>
+
+            {/* Help / Instructions (Bottom Center? Let's keep it simple for now, using Status box above) */}
         </div>
     );
 };
-```
+
